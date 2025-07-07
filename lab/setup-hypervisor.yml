@@ -1,0 +1,63 @@
+---
+- name: Configure KVM Hypervisor on Ubuntu
+  hosts: hypervisors
+  become: yes
+  vars:
+    # Define the user who will manage KVM virtual machines
+    kvm_manager_user: "esad"
+  tasks:
+    - name: Update APT package cache
+      ansible.builtin.apt:
+        update_cache: yes
+      tags: ['packages']
+
+    - name: Install cpu-checker for KVM compatibility check
+      ansible.builtin.apt:
+        name: cpu-checker
+        state: present
+      tags: ['packages']
+
+    - name: Check if KVM acceleration is available
+      ansible.builtin.command: kvm-ok
+      register: kvm_check_result
+      changed_when: false
+      failed_when: "'KVM acceleration can be used' not in kvm_check_result.stdout"
+      tags: ['pre-flight']
+
+    - name: Install KVM, QEMU, and management tools
+      ansible.builtin.apt:
+        name:
+          - qemu-kvm
+          - libvirt-daemon-system
+          - libvirt-clients
+          - bridge-utils
+          - virt-manager
+          - python3-libvirt  # Required for Ansible's virt module
+        state: present
+      tags: ['packages']
+
+    - name: Ensure libvirtd service is started and enabled
+      ansible.builtin.service:
+        name: libvirtd
+        state: started
+        enabled: yes
+      tags: ['service']
+
+    - name: Add user to the 'libvirt' group
+      ansible.builtin.user:
+        name: "{{ kvm_manager_user }}"
+        groups: libvirt
+        append: yes
+      tags: ['permissions']
+
+    - name: Add user to the 'kvm' group
+      ansible.builtin.user:
+        name: "{{ kvm_manager_user }}"
+        groups: kvm
+        append: yes
+      tags: ['permissions']
+
+    - name: Inform user to re-login
+      ansible.builtin.debug:
+        msg: "User {{ kvm_manager_user }} has been added to libvirt and kvm groups. Please log out and log back in for changes to take effect."
+      tags: ['permissions']
