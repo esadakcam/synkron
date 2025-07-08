@@ -1,0 +1,50 @@
+{# templates/user-data.j2 #}
+#cloud-config
+#
+# This is a cloud-init user-data file.
+# It configures the new virtual machine on its first boot.
+#
+
+# Set the hostname
+hostname: "{{ vm.name }}"
+
+# Create a user
+users:
+  - name: "{{ vm_user }}"
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users, admin, sudo
+    shell: /bin/bash
+    lock_passwd: false
+    plain_text_passwd: "{{ vm_password }}"
+    ssh_authorized_keys:
+      - "{{ vm_ssh_key }}"
+
+# Enable password authentication (useful for console access)
+ssh_pwauth: true
+
+# Disable root user but allow password auth for the created user
+disable_root: true
+chpasswd:
+  list: |
+    root:!
+  expire: true
+
+# Install basic packages
+packages:
+  - openssh-server
+  - curl
+  - wget
+  - vim
+  - htop
+
+# Package management
+package_update: true
+package_upgrade: true
+
+# Ensure SSH service is running
+runcmd:
+  - systemctl enable ssh
+  - systemctl start ssh
+
+# Set timezone
+timezone: UTC

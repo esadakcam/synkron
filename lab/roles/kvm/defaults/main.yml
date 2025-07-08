@@ -1,0 +1,23 @@
+---
+# defaults file for kvm
+vm_image_dir: "/var/lib/libvirt/images"
+vm_base_image_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+vm_base_image_name: "jammy-server-cloudimg-amd64.img"
+os_variant: "ubuntu22.04"
+
+# Default VM specifications
+default_memory: "2048"  # in MB
+default_vcpus: "2"
+default_disk_size: "20G"
+
+# User configuration
+vm_user: "ansible"
+vm_password: "Password123!" # You can login with this password via console
+vm_ssh_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD2R0xXAfLO/Yp6wRCCCGCJHnlyDrtWH9NpFK9miOgU8dywr6TzRPMLDrj46zYpPxTUhwgQFaQclkqJkQm0sb0SFkpm9R/rKvtrZvycrl+U/epzu50HSLO9By0fbTXTjXixP50uKSp3Ke08jUKdKaHFVfOVGEVqASUofuoXTieZ3TZRfHEq74hB2gXPnrWvqGOC5Htoes3UGPw3jC9gQBMayx70ZKsPq/UJlLk5vgzrF/KmGLEZHrb++kLd1ijropq4RmVzfGuWg0/af4Fv8JEePfmxGuWyXvzBBPYMQreKz91E7FZjhkKw0WIc7dhAXHyj0bdOcrVzbEQDV9JsNHZb2EwbOEkCNdcRj+WCx3vQHSeQ+/xKpBVkMOW0Wjzo2OggF+L+cTFuDRWtz78e1tGEMcSeuV2SBHDm2/wlbe7Ln6arbhmZu9z3ssoR4yKq+AmwcuYT6VwLykP05OYsqLi8n5Jtmd8MqbMIv9+Os9y1vEM94uyQsoAEU+bXTZNok7s= esad@pop-os"
+
+vms:
+  # - name: "ubuntu-vm-01"
+  #   memory: "4096"
+  #   vcpus: "4"
+  #   disk_size: "40G"
+  - name: "vm"

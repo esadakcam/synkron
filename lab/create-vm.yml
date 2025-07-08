@@ -1,0 +1,25 @@
+---
+- name: Provision KVM Virtual Machines
+  hosts: hypervisors # The Ubuntu server where KVM will be installed
+  become: true
+  vars:
+    # --- IMPORTANT SECURITY VARS ---
+    # Override the default insecure password and add your public SSH key
+    # vm_password: "a-very-secure-password-goes-here"
+    # vm_ssh_key: "ssh-rsa AAAA... your_email@example.com"
+
+    # --- VM DEFINITIONS ---
+    # Define the virtual machines you want to create
+    vms:
+      # - name: "web-server-01"
+      #   memory: "2048" # MB
+      #   vcpus: "2"
+      #   disk_size: "30G"
+      # - name: "db-server-01"
+      #   memory: "8192" # MB
+      #   vcpus: "4"
+      #   disk_size: "100G"
+      - name: "test-vm2"
+        # This one will use the defaults for memory, vcpus, and disk size
+  roles:
+    - role: kvm 

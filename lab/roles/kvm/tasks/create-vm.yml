@@ -1,0 +1,80 @@
+# tasks/create_vm.yml
+#
+# This task is included from tasks/main.yml for each VM
+# defined in the user's variables. It handles the creation
+# of individual virtual machines.
+#
+- name: "Check if VM '{{ vm.name }}' already exists"
+  become: true
+  community.libvirt.virt:
+    command: "info"
+    name: "{{ vm.name }}"
+  register: vm_info
+  ignore_errors: true
+
+- name: "Create cloud-init user-data and meta-data files"
+  when: vm_info.failed # Only run if the VM does not exist
+  block:
+    - name: "Create temporary directory for cloud-init config"
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: "cloud-init"
+      register: cloud_init_temp_dir
+
+    - name: "Create user-data file from template"
+      ansible.builtin.template:
+        src: "user-data.j2"
+        dest: "{{ cloud_init_temp_dir.path }}/user-data"
+        mode: "0644"
+
+    - name: "Create meta-data file from template"
+      ansible.builtin.template:
+        src: "meta-data.j2"
+        dest: "{{ cloud_init_temp_dir.path }}/meta-data"
+        mode: "0644"
+
+    - name: "Create cloud-init ISO"
+      become: true
+      ansible.builtin.command: >
+        genisoimage -output "{{ vm_image_dir }}/{{ vm.name }}-cidata.iso"
+        -volid cidata -joliet -rock
+        "{{ cloud_init_temp_dir.path }}/user-data"
+        "{{ cloud_init_temp_dir.path }}/meta-data"
+      args:
+        creates: "{{ vm_image_dir }}/{{ vm.name }}-cidata.iso"
+      changed_when: true
+
+    - name: "Clean up temporary cloud-init directory"
+      ansible.builtin.file:
+        path: "{{ cloud_init_temp_dir.path }}"
+        state: absent
+      when: cloud_init_temp_dir.path is defined
+
+- name: "Create a new disk image for the VM from the base image"
+  become: true
+  ansible.builtin.command: >
+    qemu-img create -f qcow2 -F qcow2
+    -b "{{ vm_image_dir }}/{{ vm_base_image_name }}"
+    "{{ vm_image_dir }}/{{ vm.name }}.qcow2"
+    "{{ vm.disk_size | default(default_disk_size) }}"
+  args:
+    creates: "{{ vm_image_dir }}/{{ vm.name }}.qcow2"
+  changed_when: true
+  when: vm_info.failed
+
+- name: "Provision the virtual machine using virt-install"
+  become: true
+  ansible.builtin.command: >
+    virt-install
+    --name "{{ vm.name }}"
+    --virt-type kvm
+    --memory "{{ vm.memory | default(default_memory) }}"
+    --vcpus "{{ vm.vcpus | default(default_vcpus) }}"
+    --os-variant "{{ os_variant }}"
+    --disk path="{{ vm_image_dir }}/{{ vm.name }}.qcow2",device=disk
+    --disk path="{{ vm_image_dir }}/{{ vm.name }}-cidata.iso",device=cdrom
+    --import
+    --network bridge=virbr0,model=virtio
+    --noautoconsole
+  changed_when: true
+  when: vm_info.failed
